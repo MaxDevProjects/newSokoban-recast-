@@ -92,9 +92,18 @@ function updateHero(pHero, pBox, pCol, pLine)
         pHero.col = oldC
       end
       
-      if id == 13 and pHero.dir == "left" then
+      if tileType == "box" and pHero.dir == "left" then
         pBox.col = pBox.col - 1 
-    end
+      end
+      if tileType == "box" and pHero.dir == "right" then
+        pBox.col = pBox.col + 1 
+      end
+      if tileType == "box" and pHero.dir == "up" then
+        pBox.line = pBox.line - 1 
+      end
+      if tileType == "box" and pHero.dir == "down" then
+        pBox.line = pBox.line + 1 
+      end
       
     pHero.keyPressed = true
   end
@@ -244,7 +253,7 @@ function startGame()
         if tile == 13 then
           box.col = col
           box.line = line
-          table.insert(lstBox, tile)
+          table.insert(lstBox, box)
           print("lstBox: "..#lstBox)
           print("l:"..box.line,"c :"..box.col)
         end
