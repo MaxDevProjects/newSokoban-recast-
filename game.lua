@@ -13,7 +13,13 @@ game.level.TILE_WIDTH = 64
 game.level.TILE_HEIGHT = 64
 
 lstSprite = {}
+hero = {}
+hero.col = 0
+hero.line = 0
 lstBox = {}
+box = {}
+box.col = 0
+box.line = 0
 ---------------------------------------
 -- **fonction collisions avec les murs** --
 ---------------------------------------
@@ -49,13 +55,31 @@ end
 ------------------------------
 function createBox(pImg, pCol, pLine, sX, sY)
   
-  local box = createSprite(pImg, pCol, pLine, sX, sY)
-  box.col = pCol
-  box.line = pLine
-  table.insert(lstBox, box)
+  lstBox = {}
+  local tiles = 25 --nombre de tuiles en longueur
+  --print(tiles)
+  
+  local nbLines =#game.level/(#game.level/game.level.TILE_WIDTH) --taille d'une tuile 64
+  --print(nbLines)
+  local line, col
+  local x,y
+  for line = nbLines, 1, -1 do
+    for col = 1, tiles do
+      local tile= game.level[((line-1)*tiles)+col]
+      if tile == 13 then
+        local box = createSprite(pImg, col, line, sX, sY)
+        box.current = lstBox[tile]
+        box.col = col
+        box.line = line
+        
+        table.insert(lstBox, box)
+        print("c : "..box.col.." l : "..box.line)
+      end
+    end
+  end
 end
 
-function updateHero(pHero, pBox, pCol, pLine)
+function updateHero(pHero, pBox)
   --------------------------------------
   -- **gestion mouvements case par case** --
   --------------------------------------
@@ -63,24 +87,24 @@ function updateHero(pHero, pBox, pCol, pLine)
     if pHero.keyPressed == false then
       local oldC = pHero.col
       local oldL = pHero.line
-      hero.dir = ""
+      pHero.dir = ""
       if love.keyboard.isDown("z") then
         pHero.line = pHero.line - 1 
-        hero.dir = "up"
+        pHero.dir = "up"
       end
       if love.keyboard.isDown("s") then
         pHero.line = pHero.line + 1 
-        hero.dir = "down"
+        pHero.dir = "down"
       end
       if love.keyboard.isDown("q") then
         pHero.col = pHero.col - 1 
-        hero.dir = "left"
+        pHero.dir = "left"
       end
       if love.keyboard.isDown("d") then
         pHero.col = pHero.col + 1 
-        hero.dir = "right"
+        pHero.dir = "right"
       end
-      print(hero.dir)
+      print(pHero.dir, pHero.col, pHero.line)
       -----------------------------
       -- **collision avec les murs** --
       -----------------------------
@@ -92,18 +116,38 @@ function updateHero(pHero, pBox, pCol, pLine)
         pHero.col = oldC
       end
       
+      ------------------------------
+      --        **BOXES MOVE**        --
+      ------------------------------  
+      
+      for n = 1, #lstBox do
+        
       if tileType == "box" and pHero.dir == "left" then
-        pBox.col = pBox.col - 1 
+        lstBox[n].col = lstBox[n].col - 1
+        print("boxTouchedIs:"..n)
+        lstBox[n].line = lstBox[n].line
       end
       if tileType == "box" and pHero.dir == "right" then
-        pBox.col = pBox.col + 1 
+        lstBox[n].col = lstBox[n].col + 1 
+        lstBox[n].line = lstBox[n].line
+        print("boxTouchedIs:"..n)
+
       end
       if tileType == "box" and pHero.dir == "up" then
-        pBox.line = pBox.line - 1 
+        lstBox[n].line = lstBox[n].line - 1 
+        lstBox[n].col = lstBox[n].col
+        print("boxTouchedIs:"..n)
+
       end
       if tileType == "box" and pHero.dir == "down" then
-        pBox.line = pBox.line + 1 
+        lstBox[n].line = lstBox[n].line + 1 
+        lstBox[n].col = lstBox[n].col
+        print("boxTouchedIs:"..n)
+
       end
+
+      print("box --> "..lstBox[n].col, lstBox[n].line)
+end
       
     pHero.keyPressed = true
   end
@@ -117,7 +161,7 @@ end
 
 function game.Load()
   
-    wScreen = love.graphics.getWidth()
+  wScreen = love.graphics.getWidth()
   hScreen = love.graphics.getHeight()
   
   
@@ -218,9 +262,10 @@ function startGame()
   hero = createSprite("player", pCol, pLine, 2,2)
   hero.col = pCol
   hero.line = pLine
-  box = createSprite("box", pBc, pBl, 1, 1)
+  createBox("box", pBc, pBl, 1, 1)
   box.col = pBc
   box.line = pBl
+  
   local tiles = 25 --nombre de tuiles en longueur
   --print(tiles)
   ------------------------------
@@ -248,22 +293,22 @@ function startGame()
           hero.line = line
           hero.col = col
           print("lHero:"..hero.line,"cHero :"..hero.col)
+          print(#lstSprite)
         end
-        
-        if tile == 13 then
-          box.col = col
-          box.line = line
-          table.insert(lstBox, box)
-          print("lstBox: "..#lstBox)
-          print("l:"..box.line,"c :"..box.col)
-        end
-      end
+          --if tile == 13 then
+          --    box.col = col
+          --    box.line = line
+          --    table.insert(lstBox, box)
+              --print("lstBox: "..#lstBox)
+              --print("l:"..b.line,"c :"..b.col)
+     -- end
     end
+  end
 end
 
 function game.Update()
   -- **appel de la function update du hero pour les mouvements et les collisions**
-  updateHero(hero, box, hero.col, hero.line)
+  updateHero(hero, box)
 end
 
 function drawGame()
@@ -273,7 +318,7 @@ function drawGame()
   local tiles = 25 --nombre de tuiles en longueur
   --print(tiles)
   
-  local nbLines =#game.level/(#game.level/game.level.TILE_WIDTH) --taille d'une tuile 64
+local nbLines =#game.level/(#game.level/game.level.TILE_WIDTH) --taille d'une tuile 64
   --print(nbLines)
   local line, col
   local x,y
@@ -292,12 +337,14 @@ function drawGame()
   ---------------------------------------
   -- **affichage de la liste des sprites** --
   ---------------------------------------
-  for n = 1, #lstSprite do
+  local n
+  for n = #lstSprite, 1, -1 do
         local s = lstSprite[n]
         local c = ((s.col -1) * game.level.TILE_WIDTH)
         local l = ((s.line -1) * game.level.TILE_HEIGHT)
-          love.graphics.draw(s.image, (s.col-1) * 64, (s.line - 1) * 64,0 ,s.sX, s.sY)
+          love.graphics.draw(s.image, c, l, 0, s.sX, s.sY)
       end
+      --love.graphics.print("nb box : "..#lstBox)
 end 
 
 function game.Draw()
