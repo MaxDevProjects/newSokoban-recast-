@@ -68,15 +68,16 @@ function createBox(pImg, pCol, pLine, sX, sY)
       local tile= game.level[((line-1)*tiles)+col]
       if tile == 13 then
         local box = createSprite(pImg, col, line, sX, sY)
-        box.current = lstBox[tile]
+        
         box.col = col
         box.line = line
-        
+        box.move = false
         table.insert(lstBox, box)
         print("c : "..box.col.." l : "..box.line)
       end
     end
   end
+  --return lstBox
 end
 
 function updateHero(pHero, pBox)
@@ -105,6 +106,7 @@ function updateHero(pHero, pBox)
         pHero.dir = "right"
       end
       print(pHero.dir, pHero.col, pHero.line)
+      
       -----------------------------
       -- **collision avec les murs** --
       -----------------------------
@@ -114,6 +116,7 @@ function updateHero(pHero, pBox)
       if game.level.isSolid(id) then
         pHero.line = oldL
         pHero.col = oldC
+        
       end
       
       ------------------------------
@@ -122,37 +125,63 @@ function updateHero(pHero, pBox)
       
       for n = 1, #lstBox do
         
+        oldBoxC = lstBox[n].col
+        oldBoxL = lstBox[n].line
+        local newC = 0
+        local newL = 0
       if tileType == "box" and pHero.dir == "left" then
+        lstBox[n].move = true
         lstBox[n].col = lstBox[n].col - 1
+        newC = lstBox[n].col
+        print("newC = "..newC)
         print("boxTouchedIs:"..n)
         lstBox[n].line = lstBox[n].line
+        break
       end
       if tileType == "box" and pHero.dir == "right" then
+        lstBox[n].move = true
         lstBox[n].col = lstBox[n].col + 1 
         lstBox[n].line = lstBox[n].line
+        newC = lstBox[n].col
+        print("newC = "..newC)
         print("boxTouchedIs:"..n)
 
       end
       if tileType == "box" and pHero.dir == "up" then
+        lstBox[n].move = true
         lstBox[n].line = lstBox[n].line - 1 
         lstBox[n].col = lstBox[n].col
+        newL = lstBox[n].line
+        print("newC = "..newL)
         print("boxTouchedIs:"..n)
 
       end
       if tileType == "box" and pHero.dir == "down" then
+        lstBox[n].move = true
         lstBox[n].line = lstBox[n].line + 1 
         lstBox[n].col = lstBox[n].col
+        newL = lstBox[n].line
+        print("newC = "..newL)
         print("boxTouchedIs:"..n)
-
       end
-
+      
       print("box --> "..lstBox[n].col, lstBox[n].line)
-end
+
+     -- local lb = lstBox[n].line
+     -- local cb = lstBox[n].col
+     -- local idb = game.level[((lb-1)*25) + cb]
+     -- if game.level.isSolid(idb) or tileType == "box" then
+     --   lstBox[n].line = oldBoxL
+     --   lstBox[n].col = oldBoxC
+     -- end
+    end
+    
       
     pHero.keyPressed = true
   end
     else
       pHero.keyPressed = false
+      
     end
     
 end
