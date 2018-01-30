@@ -1,8 +1,9 @@
 local game = {}
-game.currentLevel = 0
-map = require("maps/level"..tonumber(game.currentLevel))
 
-game.level = map.layers[1].data
+map = {}
+map.currentLevel = 0
+map[map.currentLevel] = require("maps/level"..tostring(map.currentLevel))
+game.level = map[map.currentLevel].layers[1].data
 
 imgTiles = {}
 game.tileTextures = {}
@@ -20,6 +21,25 @@ lstBox = {}
 box = {}
 box.col = 0
 box.line = 0
+
+
+---------------------------------------
+--       **fonction reset level**        --
+---------------------------------------
+function resetLevel(key)
+  if key == "r" then
+   map[map.currentLevel] = map[map.currentLevel]
+    print("reset")
+    return startGame()
+    end
+end
+
+function newLevel(key)
+  if key == "p" then
+     map[map.currentLevel] = map[map.currentLevel] + 1
+    print("lvl:"..map[map.currentLevel])
+  end
+end
 ---------------------------------------
 -- **fonction collisions avec les murs** --
 ---------------------------------------
@@ -46,6 +66,8 @@ function createSprite(pNomImage ,pCol, pLine, sX, sY)
   mySprites.sX = sX
   mySprites.sY = sY
   mySprites.dir = ""
+  mySprites.delete = false
+  mySprites.colide = false
   
   table.insert(lstSprite, mySprites)
   return mySprites
@@ -93,62 +115,82 @@ function updateBox()
           and lstSprite[i].line == lstBox[n].line then
           local newC = 0
           local newL = 0 
-          oldBoxC = lstBox[n].col
-          oldBoxL = lstBox[n].line
+          oldL = newL
+          oldC = newC
           
          if lstSprite[i].dir == "left" then
           lstBox[n].move = true
           lstBox[n].col = lstBox[n].col - 1
-          newC = lstBox[n].col
-          print("newC = "..newC)
-          print("boxTouchedIs:"..n)
           lstBox[n].line = lstBox[n].line
-          break
+          newC = lstBox[n].col
+          newL = lstBox[n].line
+          print("boxTouchedIs:"..n)
+          print("newC = "..newC.." newL = "..newL)
         end
         if lstSprite[i].dir == "right" then
           lstBox[n].move = true
           lstBox[n].col = lstBox[n].col + 1 
           lstBox[n].line = lstBox[n].line
           newC = lstBox[n].col
-          print("newC = "..newC)
+          newL = lstBox[n].line
           print("boxTouchedIs:"..n)
+          print("newC = "..newC.." newL = "..newL)
 
         end
         if lstSprite[i].dir == "up" then
           lstBox[n].move = true
           lstBox[n].line = lstBox[n].line - 1 
           lstBox[n].col = lstBox[n].col
+          newC = lstBox[n].col
           newL = lstBox[n].line
-          print("newL = "..newL)
           print("boxTouchedIs:"..n)
+          print("newC = "..newC.." newL = "..newL)
 
         end
         if lstSprite[i].dir == "down" then
           lstBox[n].move = true
           lstBox[n].line = lstBox[n].line + 1 
           lstBox[n].col = lstBox[n].col
+          newC = lstBox[n].col
           newL = lstBox[n].line
-          print("newL = "..newL)
           print("boxTouchedIs:"..n)
+          print("newC = "..newC.." newL = "..newL)
+        end
+        print(tostring(lstBox[n].move))
+        
+        local l = newL
+        local c = newC
+        local id = game.level[((l-1)*25) + c]
+        if game.level.isSolid(id) then
+          
+          if lstSprite[i].dir == "left" then
+            lstBox[n].col = newC + 1
+            lstBox[n].line = newL
+            lstSprite[i].col = lstSprite[i].col+1
+          end
+          if lstSprite[i].dir == "right" then
+            lstBox[n].col = newC - 1
+            lstBox[n].line = newL
+            lstSprite[i].col = lstSprite[i].col-1
+          end
+          if lstSprite[i].dir == "up" then
+            lstBox[n].line = newL + 1
+            lstBox[n].col = newC
+            lstSprite[i].line = lstSprite[i].line+1
+          end 
+          if lstSprite[i].dir == "down" then
+            lstBox[n].line = newL - 1
+            lstBox[n].col = newC
+            lstSprite[i].line = lstSprite[i].line-1
+          end
         end
         
-        --if tileType == "box" then
-        --  lstBox[n].line = oldBoxL
-        --  lstBox[n].col = oldBoxC
-        --end
-      --local l = lstBox[n].line
-      --local c = lstBox[n].col
-      --local id = game.level[((l-1)*25) + c]
-      --if game.level.isSolid(id) then
-      --  lstBox[n].line = newL
-      --  lstBox[n].col = newL
-    --end
+        end
         --print("box --> "..lstBox[n].col, lstBox[n].line)
       end
     end
   end
   
-end
 
 function updateHero(pHero, pBox)
   --------------------------------------
@@ -158,7 +200,6 @@ function updateHero(pHero, pBox)
     if pHero.keyPressed == false then
       local oldC = pHero.col
       local oldL = pHero.line
-      pHero.dir = ""
       if love.keyboard.isDown("z") then
         pHero.line = pHero.line - 1 
         pHero.dir = "up"
@@ -176,7 +217,6 @@ function updateHero(pHero, pBox)
         pHero.dir = "right"
       end
       --print(pHero.dir, pHero.col, pHero.line)
-      
       -----------------------------
       -- **collision avec les murs** --
       -----------------------------
@@ -186,11 +226,9 @@ function updateHero(pHero, pBox)
       if game.level.isSolid(id) then
         pHero.line = oldL
         pHero.col = oldC     
-      elseif pBox.move and game.level.isSolid(id) then
-         pHero.line = oldL - 2
-         pHero.col = oldC  - 2
-         
+      
     end
+      
     updateBox()
       
     pHero.keyPressed = true
@@ -199,6 +237,7 @@ function updateHero(pHero, pBox)
       pHero.keyPressed = false
       
     end
+    
     
 end
 
@@ -304,6 +343,7 @@ function startGame()
   -------------------------------
   -- **creation du sprite "hero"** --
   -------------------------------
+  
   hero = createSprite("player", pCol, pLine, 2,2)
   hero.col = pCol
   hero.line = pLine
@@ -340,13 +380,7 @@ function startGame()
           print("lHero:"..hero.line,"cHero :"..hero.col)
           print(#lstSprite)
         end
-          --if tile == 13 then
-          --    box.col = col
-          --    box.line = line
-          --    table.insert(lstBox, box)
-              --print("lstBox: "..#lstBox)
-              --print("l:"..b.line,"c :"..b.col)
-     -- end
+
     end
   end
 end
@@ -398,6 +432,12 @@ function game.Draw()
   -------------------------------------
   drawGame()
 end
+
+function game.KeyPressed(pKey)
+  resetLevel(pKey)
+  newLevel(pKey)
+end
+
 
 
 

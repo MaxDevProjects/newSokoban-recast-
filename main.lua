@@ -33,4 +33,5 @@ function love.keypressed(key)
   end
   print(key)
   
+  game.KeyPressed(key)
 end
