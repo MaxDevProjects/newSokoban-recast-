@@ -1,13 +1,18 @@
 local game = {}
 
-
+map = {}
+currentLvl = 0
+map[currentLvl] = require("maps/level"..currentLvl)
+game.level = map[currentLvl].layers[1].data
+print(currentLvl)
 
 imgTiles = {}
 game.tileTextures = {}
 game.tileSheet = nil
 game.tileType = {}
 
-
+game.level.TILE_WIDTH = 64
+game.level.TILE_HEIGHT = 64
 
 lstSprite = {}
 hero = {}
@@ -18,27 +23,7 @@ button = {}
 button.col = 0
 button.line = 0
 
-function newLevel(key)
-map = {}
-currentLvl = 0
-map[currentLvl] = require("maps/level"..currentLvl)
-game.level = map[currentLvl].layers[1].data
-print(currentLvl)
-  if key == "p" then
-    currentLvl = currentLvl + 1
-    for b = #lstBox, 1, -1 do
-        for s = #lstSprite, 1, -1 do
-          table.remove(lstSprite, s)
-          table.remove(lstBox, b)
-        end
-      end
-    print("lvl:"..currentLvl)
-    return startGame(currentLvl)
-  end
-end
 
-game.level.TILE_WIDTH = 64
-game.level.TILE_HEIGHT = 64
 ---------------------------------------
 --       **fonction reset level**        --
 ---------------------------------------
@@ -52,11 +37,23 @@ function resetLevel(key)
       end
    currentLvl = currentLvl
     print("reset", "lvl:"..currentLvl)
-    return startGame(currentLvl)
+    return startGame()
     end
 end
 
-
+function newLevel(key)
+  if key == "p" then
+    for b = #lstBox, 1, -1 do
+        for s = #lstSprite, 1, -1 do
+          table.remove(lstSprite, s)
+          table.remove(lstBox, b)
+        end
+      end
+    currentLvl = currentLvl + 1
+    print("lvl:"..currentLvl)
+    return startGame()
+  end
+end
 ---------------------------------------
 -- **fonction collisions avec les murs** --
 ---------------------------------------
@@ -295,10 +292,6 @@ function isResolved()
   if totalBut == #lstButton then
     resolved = true
     print("is resolved")
-    for m = 0, #map do
-      currentLvl = map[m]
-      currentLvl = currentLvl + 1
-    end
   else
     resolved = false
   end
@@ -400,10 +393,10 @@ function game.Load()
   game.tileType[10] ="floor"
   
   -- APPEL DU STARTGAME
-  startGame(currentLvl)
+  startGame()
 end
 
-function startGame(currentLvl)
+function startGame()
   -------------------------------
   -- **creation du sprite "hero"** --
   -------------------------------
