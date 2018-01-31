@@ -1,45 +1,62 @@
 local game = {}
 
-map = {}
-map.currentLevel = 0
-map[map.currentLevel] = require("maps/level"..tostring(map.currentLevel))
-game.level = map[map.currentLevel].layers[1].data
+
 
 imgTiles = {}
 game.tileTextures = {}
 game.tileSheet = nil
 game.tileType = {}
 
-game.level.TILE_WIDTH = 64
-game.level.TILE_HEIGHT = 64
+
 
 lstSprite = {}
 hero = {}
 hero.col = 0
 hero.line = 0
 lstBox = {}
-box = {}
-box.col = 0
-box.line = 0
+button = {}
+button.col = 0
+button.line = 0
 
+function newLevel(key)
+map = {}
+currentLvl = 0
+map[currentLvl] = require("maps/level"..currentLvl)
+game.level = map[currentLvl].layers[1].data
+print(currentLvl)
+  if key == "p" then
+    currentLvl = currentLvl + 1
+    for b = #lstBox, 1, -1 do
+        for s = #lstSprite, 1, -1 do
+          table.remove(lstSprite, s)
+          table.remove(lstBox, b)
+        end
+      end
+    print("lvl:"..currentLvl)
+    return startGame(currentLvl)
+  end
+end
 
+game.level.TILE_WIDTH = 64
+game.level.TILE_HEIGHT = 64
 ---------------------------------------
 --       **fonction reset level**        --
 ---------------------------------------
 function resetLevel(key)
   if key == "r" then
-   map[map.currentLevel] = map[map.currentLevel]
-    print("reset")
-    return startGame()
+      for b = #lstBox, 1, -1 do
+        for s = #lstSprite, 1, -1 do
+          table.remove(lstSprite, s)
+          table.remove(lstBox, b)
+        end
+      end
+   currentLvl = currentLvl
+    print("reset", "lvl:"..currentLvl)
+    return startGame(currentLvl)
     end
 end
 
-function newLevel(key)
-  if key == "p" then
-     map[map.currentLevel] = map[map.currentLevel] + 1
-    print("lvl:"..map[map.currentLevel])
-  end
-end
+
 ---------------------------------------
 -- **fonction collisions avec les murs** --
 ---------------------------------------
@@ -103,11 +120,35 @@ function createBox(pImg, pCol, pLine, sX, sY)
   --return lstBox
 end
 
-function updateBox()
+function createButton()
+  lstButton = {}
+  local tiles = 25 --nombre de tuiles en longueur
+  --print(tiles)
+  
+  local nbLines =#game.level/(#game.level/game.level.TILE_WIDTH) --taille d'une tuile 64
+  --print(nbLines)
+  local line, col
+  local x,y
+  for line = nbLines, 1, -1 do
+    for col = 1, tiles do
+      local tile= game.level[((line-1)*tiles)+col]
+      if tile == 12 then
+        button = {}
+        button.col = col
+        button.line = line
+        --resolved = false
+        table.insert(lstButton, button)
+        print("nbBut : "..#lstButton.." ButtonC : "..button.col.." ButtonL : "..button.line)
+      end
+    end
+  end
+  
+end
+
+function updateBox(pOldC, pOldL)
         ------------------------------
       --        **BOXES MOVE**        --
       ------------------------------  
-      --if tileType == "box" then 
       for i = 1, #lstSprite do
         for n= #lstBox, 1, -1 do
           
@@ -118,7 +159,7 @@ function updateBox()
           oldL = newL
           oldC = newC
           
-         if lstSprite[i].dir == "left" then
+         if lstSprite[i].dir == "left" and lstBox[n] then
           lstBox[n].move = true
           lstBox[n].col = lstBox[n].col - 1
           lstBox[n].line = lstBox[n].line
@@ -127,7 +168,7 @@ function updateBox()
           print("boxTouchedIs:"..n)
           print("newC = "..newC.." newL = "..newL)
         end
-        if lstSprite[i].dir == "right" then
+        if lstSprite[i].dir == "right" and lstBox[n] then
           lstBox[n].move = true
           lstBox[n].col = lstBox[n].col + 1 
           lstBox[n].line = lstBox[n].line
@@ -137,7 +178,7 @@ function updateBox()
           print("newC = "..newC.." newL = "..newL)
 
         end
-        if lstSprite[i].dir == "up" then
+        if lstSprite[i].dir == "up" and lstBox[n] then
           lstBox[n].move = true
           lstBox[n].line = lstBox[n].line - 1 
           lstBox[n].col = lstBox[n].col
@@ -147,7 +188,7 @@ function updateBox()
           print("newC = "..newC.." newL = "..newL)
 
         end
-        if lstSprite[i].dir == "down" then
+        if lstSprite[i].dir == "down" and lstBox[n] then
           lstBox[n].move = true
           lstBox[n].line = lstBox[n].line + 1 
           lstBox[n].col = lstBox[n].col
@@ -162,34 +203,34 @@ function updateBox()
         local c = newC
         local id = game.level[((l-1)*25) + c]
         if game.level.isSolid(id) then
-          
-          if lstSprite[i].dir == "left" then
+          if lstSprite[i].dir == "left" and lstBox[n] then
             lstBox[n].col = newC + 1
             lstBox[n].line = newL
-            lstSprite[i].col = lstSprite[i].col+1
+            lstSprite[i].col = pOldC
           end
           if lstSprite[i].dir == "right" then
             lstBox[n].col = newC - 1
             lstBox[n].line = newL
-            lstSprite[i].col = lstSprite[i].col-1
+            lstSprite[i].col = pOldC
           end
           if lstSprite[i].dir == "up" then
             lstBox[n].line = newL + 1
             lstBox[n].col = newC
-            lstSprite[i].line = lstSprite[i].line+1
+            lstSprite[i].line = pOldL
           end 
           if lstSprite[i].dir == "down" then
             lstBox[n].line = newL - 1
             lstBox[n].col = newC
-            lstSprite[i].line = lstSprite[i].line-1
+            lstSprite[i].line = pOldL
           end
         end
         
-        end
-        --print("box --> "..lstBox[n].col, lstBox[n].line)
-      end
+      end      
+      --print("box --> "..lstBox[n].col, lstBox[n].line)
+      
     end
   end
+end
   
 
 function updateHero(pHero, pBox)
@@ -229,7 +270,8 @@ function updateHero(pHero, pBox)
       
     end
       
-    updateBox()
+    updateBox(oldC, oldL)
+    
       
     pHero.keyPressed = true
   end
@@ -240,6 +282,28 @@ function updateHero(pHero, pBox)
     
     
 end
+
+function isResolved()
+  local totalBut = 0
+  for b = #lstBox, 1, -1 do
+    for c = #lstButton, 1, -1 do
+      if lstBox[b].col == lstButton[c].col and  lstBox[b].line == lstButton[c].line then
+        totalBut = totalBut + 1
+      end
+    end
+  end  
+  if totalBut == #lstButton then
+    resolved = true
+    print("is resolved")
+    for m = 0, #map do
+      currentLvl = map[m]
+      currentLvl = currentLvl + 1
+    end
+  else
+    resolved = false
+  end
+end
+
 
 
 
@@ -336,20 +400,21 @@ function game.Load()
   game.tileType[10] ="floor"
   
   -- APPEL DU STARTGAME
-  startGame()
+  startGame(currentLvl)
 end
 
-function startGame()
+function startGame(currentLvl)
   -------------------------------
   -- **creation du sprite "hero"** --
   -------------------------------
-  
+  currentLvl = currentLvl
   hero = createSprite("player", pCol, pLine, 2,2)
   hero.col = pCol
   hero.line = pLine
   createBox("box", pBc, pBl, 1, 1)
-  box.col = pBc
-  box.line = pBl
+  createButton()
+  --button.col = pBc
+  --button.line = pBl
   
   local tiles = 25 --nombre de tuiles en longueur
   --print(tiles)
@@ -387,7 +452,8 @@ end
 
 function game.Update()
   -- **appel de la function update du hero pour les mouvements et les collisions**
-  updateHero(hero, box)
+  updateHero(hero, button)
+  isResolved()
 end
 
 function drawGame()
@@ -423,7 +489,8 @@ local nbLines =#game.level/(#game.level/game.level.TILE_WIDTH) --taille d'une tu
         local l = ((s.line -1) * game.level.TILE_HEIGHT)
           love.graphics.draw(s.image, c, l, 0, s.sX, s.sY)
       end
-      --love.graphics.print("nb box : "..#lstBox)
+      love.graphics.print("reset : r", 10, hScreen - 30, 0, 2, 2)
+      love.graphics.print("resolved : "..tostring(resolved), 125, hScreen - 30, 0, 2, 2)
 end 
 
 function game.Draw()
