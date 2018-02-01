@@ -1,9 +1,9 @@
 local game = {}
 
 map = {}
-currentLvl = 0
-map[currentLvl] = require("maps/level"..currentLvl)
-game.level = map[currentLvl].layers[1].data
+currentLvl = 2
+map = require("maps/level"..tostring(currentLvl))
+game.level = map.layers[1].data
 print(currentLvl)
 
 imgTiles = {}
@@ -22,7 +22,6 @@ lstBox = {}
 button = {}
 button.col = 0
 button.line = 0
-
 
 ---------------------------------------
 --       **fonction reset level**        --
@@ -43,15 +42,9 @@ end
 
 function newLevel(key)
   if key == "p" then
-    for b = #lstBox, 1, -1 do
-        for s = #lstSprite, 1, -1 do
-          table.remove(lstSprite, s)
-          table.remove(lstBox, b)
-        end
-      end
     currentLvl = currentLvl + 1
     print("lvl:"..currentLvl)
-    return startGame()
+    return
   end
 end
 ---------------------------------------
@@ -82,7 +75,7 @@ function createSprite(pNomImage ,pCol, pLine, sX, sY)
   mySprites.dir = ""
   mySprites.delete = false
   mySprites.colide = false
-  
+  mySprites.move = false
   table.insert(lstSprite, mySprites)
   return mySprites
 end
@@ -151,80 +144,95 @@ function updateBox(pOldC, pOldL)
           
           if lstSprite[i].col == lstBox[n].col 
           and lstSprite[i].line == lstBox[n].line then
-          local newC = 0
-          local newL = 0 
-          oldL = newL
-          oldC = newC
+            local newC = 0
+            local newL = 0 
+            oldL = newL
+            oldC = newC
           
-         if lstSprite[i].dir == "left" and lstBox[n] then
-          lstBox[n].move = true
-          lstBox[n].col = lstBox[n].col - 1
-          lstBox[n].line = lstBox[n].line
-          newC = lstBox[n].col
-          newL = lstBox[n].line
-          print("boxTouchedIs:"..n)
-          print("newC = "..newC.." newL = "..newL)
-        end
-        if lstSprite[i].dir == "right" and lstBox[n] then
-          lstBox[n].move = true
-          lstBox[n].col = lstBox[n].col + 1 
-          lstBox[n].line = lstBox[n].line
-          newC = lstBox[n].col
-          newL = lstBox[n].line
-          print("boxTouchedIs:"..n)
-          print("newC = "..newC.." newL = "..newL)
+             if lstSprite[i].dir == "left" and lstBox[n] then
+              lstBox[n].move = true
+              lstBox[n].col = lstBox[n].col - 1
+              lstBox[n].line = lstBox[n].line
+              newC = lstBox[n].col
+              newL = lstBox[n].line
+              print(tostring(lstBox[n].move))
+              --print("boxTouchedIs:"..n)
+              --print("newC = "..newC.." newL = "..newL)
+            end
+            if lstSprite[i].dir == "right" and lstBox[n] then
+              lstBox[n].move = true
+              lstBox[n].col = lstBox[n].col + 1 
+              lstBox[n].line = lstBox[n].line
+              newC = lstBox[n].col
+              newL = lstBox[n].line
+              print(tostring(lstBox[n].move))
+             --print("boxTouchedIs:"..n)
+             --print("newC = "..newC.." newL = "..newL)
+            end
+            if lstSprite[i].dir == "up" and lstBox[n] then
+              lstBox[n].move = true
+              lstBox[n].line = lstBox[n].line - 1 
+              lstBox[n].col = lstBox[n].col
+              newC = lstBox[n].col
+              newL = lstBox[n].line
+              print(tostring(lstBox[n].move))
+              --print("boxTouchedIs:"..n)
+              --print("newC = "..newC.." newL = "..newL)
+            end
+            if lstSprite[i].dir == "down" and lstBox[n] then
+              lstBox[n].move = true
+              lstBox[n].line = lstBox[n].line + 1 
+              lstBox[n].col = lstBox[n].col
+              newC = lstBox[n].col
+              newL = lstBox[n].line
+              print(tostring(lstBox[n].move))
+              --print("boxTouchedIs:"..n)
+              --print("newC = "..newC.." newL = "..newL)
+            end
+        --print(tostring(lstBox[n].move))
 
-        end
-        if lstSprite[i].dir == "up" and lstBox[n] then
-          lstBox[n].move = true
-          lstBox[n].line = lstBox[n].line - 1 
-          lstBox[n].col = lstBox[n].col
-          newC = lstBox[n].col
-          newL = lstBox[n].line
-          print("boxTouchedIs:"..n)
-          print("newC = "..newC.." newL = "..newL)
-
-        end
-        if lstSprite[i].dir == "down" and lstBox[n] then
-          lstBox[n].move = true
-          lstBox[n].line = lstBox[n].line + 1 
-          lstBox[n].col = lstBox[n].col
-          newC = lstBox[n].col
-          newL = lstBox[n].line
-          print("boxTouchedIs:"..n)
-          print("newC = "..newC.." newL = "..newL)
-        end
-        print(tostring(lstBox[n].move))
-        
-        local l = newL
-        local c = newC
-        local id = game.level[((l-1)*25) + c]
-        if game.level.isSolid(id) then
-          if lstSprite[i].dir == "left" and lstBox[n] then
-            lstBox[n].col = newC + 1
-            lstBox[n].line = newL
-            lstSprite[i].col = pOldC
+          local l = newL
+          local c = newC
+          local id = game.level[((l-1)*25) + c]
+          
+          if game.level.isSolid(id) then
+            
+            if lstSprite[i].dir == "left" and lstBox[n] then
+              lstBox[n].col = newC + 1
+              lstBox[n].line = newL
+              lstSprite[i].col = pOldC
+              lstBox[n].move = false
+            end
+            if lstSprite[i].dir == "right" then
+              lstBox[n].col = newC - 1
+              lstBox[n].line = newL
+              lstSprite[i].col = pOldC
+              lstBox[n].move = false
+            end
+            if lstSprite[i].dir == "up" then
+              lstBox[n].line = newL + 1
+              lstBox[n].col = newC
+              lstSprite[i].line = pOldL
+              lstBox[n].move = false
+            end 
+            if lstSprite[i].dir == "down" then
+              lstBox[n].line = newL - 1
+              lstBox[n].col = newC
+              lstSprite[i].line = pOldL
+              lstBox[n].move = false
+            end
           end
-          if lstSprite[i].dir == "right" then
-            lstBox[n].col = newC - 1
-            lstBox[n].line = newL
-            lstSprite[i].col = pOldC
-          end
-          if lstSprite[i].dir == "up" then
-            lstBox[n].line = newL + 1
-            lstBox[n].col = newC
-            lstSprite[i].line = pOldL
-          end 
-          if lstSprite[i].dir == "down" then
-            lstBox[n].line = newL - 1
-            lstBox[n].col = newC
-            lstSprite[i].line = pOldL
-          end
-        end
-        
-      end      
+          
       --print("box --> "..lstBox[n].col, lstBox[n].line)
-      
+      end
+    for o= #lstBox, 1, -1 do
+            if lstBox[n].col +1 == lstBox[o].col and lstSprite[i].dir == "left" then
+              print("tocheAnotherBox")
+              lstBox[n].col = lstBox[o].col
+              --lstBox[n].line = lstBox[o].line
+              --lstSprite[i].col = pOldC
+            end
+          end
     end
   end
 end
@@ -271,10 +279,11 @@ function updateHero(pHero, pBox)
     
       
     pHero.keyPressed = true
+    pHero.move = true
   end
     else
       pHero.keyPressed = false
-      
+      pHero.move = true
     end
     
     
