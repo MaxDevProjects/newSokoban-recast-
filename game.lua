@@ -1,10 +1,9 @@
 local game = {}
 
 map = {}
-currentLvl = 2
-map = require("maps/level"..tostring(currentLvl))
+
+map = require("maps/level2")
 game.level = map.layers[1].data
-print(currentLvl)
 
 imgTiles = {}
 game.tileTextures = {}
@@ -23,6 +22,9 @@ button = {}
 button.col = 0
 button.line = 0
 
+currentLvl = 1
+
+game.level.fogGrid = {}
 ---------------------------------------
 --       **fonction reset level**        --
 ---------------------------------------
@@ -36,15 +38,21 @@ function resetLevel(key)
       end
    currentLvl = currentLvl
     print("reset", "lvl:"..currentLvl)
-    return startGame()
+    startGame()
     end
 end
 
 function newLevel(key)
+
   if key == "p" then
-    currentLvl = currentLvl + 1
-    print("lvl:"..currentLvl)
-    return
+    game.level = map.layers[currentLvl].data
+     currentLvl = currentLvl + 1
+    if currentLvl > #map.layers then
+      currentLvl = 1
+      print("TODO: Victory screen, all level completed".."\n".."layer"..#map.layers)
+    else
+      print("layer : "..#map.layers)
+    end
   end
 end
 ---------------------------------------
@@ -59,7 +67,6 @@ function game.level.isSolid(pID)
   end
   return false
 end
-
 
 --------------------------------------
 -- **CREATION DE LA LISTE DES SPRITES** --
@@ -132,107 +139,88 @@ function createButton()
       end
     end
   end
-  
 end
 
-function updateBox(pOldC, pOldL)
-        ------------------------------
+function isCollideBox(pBox, pDir)
+  --collision de caisse à caisse CHECK! 
+  
+  for _, box in ipairs(lstBox) do
+    if box ~= pBox then -- pour ne pas tester la boite avec elle même
+      if pDir == "up" then
+        if box.line == pBox.line-1 and box.col == pBox.col then
+          return true
+        end
+      elseif pDir == "down" then
+        if box.line == pBox.line+1 and box.col == pBox.col then
+          return true
+        end
+      elseif pDir == "left" then
+        if box.line == pBox.line and box.col == pBox.col-1 then
+          return true
+        end
+      elseif pDir == "right" then
+          if box.line == pBox.line and box.col == pBox.col+1 then
+            return true
+        end
+      end
+    end
+  end
+  return false
+end
+
+function updateBox(pCol, pLine, pDir)
+      ------------------------------
       --        **BOXES MOVE**        --
       ------------------------------  
-      for i = 1, #lstSprite do
-        for n= #lstBox, 1, -1 do
-          
-          if lstSprite[i].col == lstBox[n].col 
-          and lstSprite[i].line == lstBox[n].line then
-            local newC = 0
-            local newL = 0 
-            oldL = newL
-            oldC = newC
-          
-             if lstSprite[i].dir == "left" and lstBox[n] then
-              lstBox[n].move = true
-              lstBox[n].col = lstBox[n].col - 1
-              lstBox[n].line = lstBox[n].line
-              newC = lstBox[n].col
-              newL = lstBox[n].line
-              print(tostring(lstBox[n].move))
-              --print("boxTouchedIs:"..n)
-              --print("newC = "..newC.." newL = "..newL)
-            end
-            if lstSprite[i].dir == "right" and lstBox[n] then
-              lstBox[n].move = true
-              lstBox[n].col = lstBox[n].col + 1 
-              lstBox[n].line = lstBox[n].line
-              newC = lstBox[n].col
-              newL = lstBox[n].line
-              print(tostring(lstBox[n].move))
-             --print("boxTouchedIs:"..n)
-             --print("newC = "..newC.." newL = "..newL)
-            end
-            if lstSprite[i].dir == "up" and lstBox[n] then
-              lstBox[n].move = true
-              lstBox[n].line = lstBox[n].line - 1 
-              lstBox[n].col = lstBox[n].col
-              newC = lstBox[n].col
-              newL = lstBox[n].line
-              print(tostring(lstBox[n].move))
-              --print("boxTouchedIs:"..n)
-              --print("newC = "..newC.." newL = "..newL)
-            end
-            if lstSprite[i].dir == "down" and lstBox[n] then
-              lstBox[n].move = true
-              lstBox[n].line = lstBox[n].line + 1 
-              lstBox[n].col = lstBox[n].col
-              newC = lstBox[n].col
-              newL = lstBox[n].line
-              print(tostring(lstBox[n].move))
-              --print("boxTouchedIs:"..n)
-              --print("newC = "..newC.." newL = "..newL)
-            end
-        --print(tostring(lstBox[n].move))
-
-          local l = newL
-          local c = newC
-          local id = game.level[((l-1)*25) + c]
-          
-          if game.level.isSolid(id) then
-            
-            if lstSprite[i].dir == "left" and lstBox[n] then
-              lstBox[n].col = newC + 1
-              lstBox[n].line = newL
-              lstSprite[i].col = pOldC
-              lstBox[n].move = false
-            end
-            if lstSprite[i].dir == "right" then
-              lstBox[n].col = newC - 1
-              lstBox[n].line = newL
-              lstSprite[i].col = pOldC
-              lstBox[n].move = false
-            end
-            if lstSprite[i].dir == "up" then
-              lstBox[n].line = newL + 1
-              lstBox[n].col = newC
-              lstSprite[i].line = pOldL
-              lstBox[n].move = false
-            end 
-            if lstSprite[i].dir == "down" then
-              lstBox[n].line = newL - 1
-              lstBox[n].col = newC
-              lstSprite[i].line = pOldL
-              lstBox[n].move = false
-            end
-          end
-          
-      --print("box --> "..lstBox[n].col, lstBox[n].line)
+      -- revoir le "down", pas de collision avec les mur vers la bas !!!!
+      
+  for n= #lstBox, 1, -1 do
+    local box = lstBox[n]
+    --print("box :",box, box.col, box.line, pCol, pLine)
+    if box.line == pLine and box.col == pCol then -- collision
+      --print("collide box",box, "at",box.col, box.line)
+      if pDir == "left" then
+        local id = game.level[((pLine-1)*25) + pCol-1]
+        --on déplace la box que si elle ne touche pas un mur ni une autre box
+        if not game.level.isSolid(id) and not isCollideBox(box, pDir) then
+          box.col = box.col - 1
+          return true -- ok, la boite à bien bougé
+        else
+          return false -- oups, la boite reste bloquée, le joueur n'avance plus du coup
+        end
+        
+      elseif pDir == "right" then
+        local id = game.level[((pLine-1)*25) + pCol+1]
+        print(id)
+        if not game.level.isSolid(id) and not isCollideBox(box, pDir) then
+          box.col = box.col + 1
+          return true
+        else
+          return false
+        end
+        
+      elseif pDir == "up" then
+        local id = game.level[((pLine-2)*25) + pCol]
+        print(id)
+        if not game.level.isSolid(id) and not isCollideBox(box, pDir) then
+          box.line = box.line - 1
+          return true
+        else
+          return false
+        end
+        
+      elseif pDir == "down" then
+        local id = game.level[((pLine-2)*25) + pCol]
+        print(id)
+        if not game.level.isSolid(id) and not isCollideBox(box, pDir) then
+          box.line = box.line + 1
+          return true
+        else
+          return false
+        end
+        
       end
-    for o= #lstBox, 1, -1 do
-            if lstBox[n].col +1 == lstBox[o].col and lstSprite[i].dir == "left" then
-              print("tocheAnotherBox")
-              lstBox[n].col = lstBox[o].col
-              --lstBox[n].line = lstBox[o].line
-              --lstSprite[i].col = pOldC
-            end
-          end
+      
     end
   end
 end
@@ -242,6 +230,8 @@ function updateHero(pHero, pBox)
   --------------------------------------
   -- **gestion mouvements case par case** --
   --------------------------------------
+  local collideBox = false -- teste la collision contre une box
+
   if love.keyboard.isDown("z","q","s","d") then
     if pHero.keyPressed == false then
       local oldC = pHero.col
@@ -249,6 +239,7 @@ function updateHero(pHero, pBox)
       if love.keyboard.isDown("z") then
         pHero.line = pHero.line - 1 
         pHero.dir = "up"
+        
       end
       if love.keyboard.isDown("s") then
         pHero.line = pHero.line + 1 
@@ -271,19 +262,24 @@ function updateHero(pHero, pBox)
       local id = game.level[((l-1)*25) + c]
       if game.level.isSolid(id) then
         pHero.line = oldL
-        pHero.col = oldC     
-      
+        pHero.col = oldC
+      else
+        game.level.clearFogBis(hero.line, hero.col)
+      end
+    local boxMove = true --test si la boite poussée se déplace ou non cas d'une collision contre un
+    -- mur ou une autre boite)
+    boxMove = updateBox(pHero.col, pHero.line, pHero.dir)
+    -- Bon, finalement, le joueur retourne à sa position initiale, une collision l'empeche
+    -- d'avancer
+    if boxMove == false then
+      pHero.line = oldL
+      pHero.col = oldC
     end
-      
-    updateBox(oldC, oldL)
     
-      
     pHero.keyPressed = true
-    pHero.move = true
   end
     else
       pHero.keyPressed = false
-      pHero.move = true
     end
     
     
@@ -401,8 +397,21 @@ function game.Load()
   game.tileType[11] ="floor"
   game.tileType[10] ="floor"
   
-  -- APPEL DU STARTGAME
+-- APPEL DU STARTGAME
   startGame()
+  
+  game.level.fogGrid = {}
+  
+  for l=1, game.level.TILE_WIDTH do
+    game.level.fogGrid[l] = {}
+    for c=1, game.level.TILE_HEIGHT do
+      game.level.fogGrid[l][c] = 1
+    end
+  end
+    game.level.clearFogBis(hero.line, hero.col)
+
+    
+   
 end
 
 function startGame()
@@ -415,9 +424,7 @@ function startGame()
   hero.line = pLine
   createBox("box", pBc, pBl, 1, 1)
   createButton()
-  --button.col = pBc
-  --button.line = pBl
-  
+
   local tiles = 25 --nombre de tuiles en longueur
   --print(tiles)
   ------------------------------
@@ -450,12 +457,33 @@ function startGame()
 
     end
   end
+  
 end
 
 function game.Update()
   -- **appel de la function update du hero pour les mouvements et les collisions**
   updateHero(hero, button)
   isResolved()
+end
+
+
+function game.level.clearFogBis(pLine, pColumn)
+  local c, l
+  for l=1, game.level.TILE_WIDTH do
+    for c=1, game.level.TILE_HEIGHT do
+      if c>0 and c <= game.level.TILE_WIDTH and l>0 and l <=game.level.TILE_HEIGHT then
+        local dist = math.dist(c, l, pColumn, pLine)
+        if dist <4 then
+          local alpha = dist /4
+          if game.level.fogGrid[l][c] > alpha then
+            game.level.fogGrid[l][c] = alpha*2
+          end
+        else 
+          game.level.fogGrid[l][c] = dist
+        end
+      end
+    end
+  end  
 end
 
 function drawGame()
@@ -477,6 +505,11 @@ local nbLines =#game.level/(#game.level/game.level.TILE_WIDTH) --taille d'une tu
       local y= ((line-1)*game.level.TILE_HEIGHT)
       if texQuad~=nil then
         love.graphics.draw(game.tileSheet, texQuad, x, y)  
+         if game.level.fogGrid[line][col] > 0 then
+          love.graphics.setColor(0,0,0,25 * game.level.fogGrid[line][col])
+          love.graphics.rectangle("fill", x, y, game.level.TILE_WIDTH, game.level.TILE_HEIGHT)
+          love.graphics.setColor(255,255,255)
+        end
       end
     end
   end
@@ -500,6 +533,16 @@ function game.Draw()
   -- **appel de la fonction drawGame()** --
   -------------------------------------
   drawGame()
+  -- trace une grille de controle de position
+  --love.graphics.setColor(255,0,0,120)
+  --for i = 0, 1400, 64 do
+  --  love.graphics.line(i, 0, i, 700)
+  --end
+  --for i = 0, 700, 64 do
+  --  love.graphics.line(0, i, 1400, i)
+  --end
+  --
+  --love.graphics.setColor(255,255,255)
 end
 
 function game.KeyPressed(pKey)
